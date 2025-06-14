@@ -99,3 +99,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## 🛠️ CI
+
+This project uses **GitHub Actions** for continuous integration. Every push or pull request against `main` triggers the workflow located at `.github/workflows/ci.yml`, which:
+
+1. Sets up JDK 21 with Gradle dependency caching
+2. Runs `./gradlew clean build` (compile + unit tests)
+3. Builds the Docker image to ensure the Dockerfile stays valid
+
+You can extend the workflow later to push container images or deploy automatically.
+
