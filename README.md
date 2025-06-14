@@ -80,7 +80,7 @@ Detailed API documentation and database schema can be found in `voizeforms.md`.
 
 MIT License
 
-Copyright (c) 2024 VoizeForms
+Copyright (c) 2025 VoizeForms
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
