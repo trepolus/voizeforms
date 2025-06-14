@@ -50,9 +50,8 @@ The service will be available at `http://localhost:8080`
 
 ## 🛠️ API Endpoints
 
-- `POST /api/v1/transcribe` - Submit audio for transcription (cold flow)
-- `GET /api/v1/session/subscribe` - Subscribe to live transcription updates (hot flow)
-- `POST /api/v1/form/submit` - Submit completed form data
+- `GET /health` - Health check endpoint
+- `POST /api/transcribe` - Submit audio for transcription (cold flow)
 
 ## 🧪 Testing
 

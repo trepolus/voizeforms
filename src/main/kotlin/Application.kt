@@ -1,5 +1,6 @@
 package com.voizeforms
 
+import com.voizeforms.routes.healthRoutes
 import com.voizeforms.routes.transcriptionRoutes
 import com.voizeforms.service.MockTranscriptionService
 import io.ktor.serialization.kotlinx.json.*
@@ -20,6 +21,7 @@ fun Application.module() {
 
     // Configure routing
     routing {
+        healthRoutes()
         transcriptionRoutes(transcriptionService)
     }
 }
