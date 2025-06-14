@@ -25,6 +25,27 @@ VoizeForms is a modern backend service that helps frontline workers streamline t
 - JDK 17 or higher
 - Docker and Docker Compose
 - MongoDB (included in Docker setup)
+- Google Cloud Platform account (for OAuth)
+
+### Environment Setup
+
+1. Set up Google OAuth credentials:
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or select an existing one
+   - Enable the Google+ API
+   - Go to Credentials → Create Credentials → OAuth Client ID
+   - Set up OAuth consent screen
+   - Add authorized redirect URI: `http://localhost:8080/auth/callback` (for local development)
+   - Copy the Client ID and Client Secret
+
+2. Configure environment variables:
+```bash
+# Required OAuth configuration
+export GOOGLE_CLIENT_ID="your-google-client-id"
+export GOOGLE_CLIENT_SECRET="your-google-client-secret"
+export ALLOWED_EMAILS="user1@example.com,user2@example.com"  # Comma-separated list of allowed emails
+export BASE_URL="http://localhost:8080"  # Your application's base URL
+```
 
 ### Local Development
 
@@ -52,6 +73,20 @@ The service will be available at `http://localhost:8080`
 
 - `GET /health` - Health check endpoint
 - `POST /api/transcribe` - Submit audio for transcription (cold flow)
+- `GET /auth/login` - Initiate OAuth login
+- `GET /auth/callback` - OAuth callback endpoint
+- `GET /auth/logout` - Logout endpoint
+
+## 🔒 OAuth Configuration
+
+The application uses Google OAuth for authentication. To configure:
+
+1. Set up Google OAuth credentials as described in Environment Setup
+2. Configure the allowed emails using the `ALLOWED_EMAILS` environment variable:
+   - Single email: `export ALLOWED_EMAILS="user@example.com"`
+   - Multiple emails: `export ALLOWED_EMAILS="user1@example.com,user2@example.com,user3@example.com"`
+   - No spaces between emails, just commas
+   - Case-sensitive matching
 
 ## 🧪 Testing
 
