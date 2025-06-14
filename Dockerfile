@@ -1,12 +1,14 @@
 FROM amazoncorretto:21-alpine-jdk
 WORKDIR /app
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Copy project files into container and ensure wrapper is executable
 COPY . .
 RUN chmod +x gradlew
 
-# Set environment variables to avoid using SVE instructions for ARM64 M4 Processor
-ENV JAVA_OPTS="-XX:UseSVE=0"
+# Set environment variables
 ENV GRADLE_OPTS="-Dorg.gradle.daemon=false"
 
 # Build app
