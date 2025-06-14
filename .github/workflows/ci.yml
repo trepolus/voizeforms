@@ -1,10 +1,18 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:  # Allow manual triggers
+
+env:
+  PROJECT_ID: voizeforms
+  SERVICE_NAME: voizeforms
+  REGION: europe-west1
+  REPOSITORY: europe-west1-docker.pkg.dev/voizeforms/voizeforms
+  IMAGE_NAME: voizeforms
 
 jobs:
   build-and-test:
@@ -37,11 +45,53 @@ jobs:
           fi
 
       - name: Build Docker image
-        run: docker build -t voizeforms:${{ steps.set-tag.outputs.tag }} .
+        run: docker build -t ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ steps.set-tag.outputs.tag }} .
 
-      - name: Upload Docker image
-        uses: actions/upload-artifact@v4
+  deploy:
+    name: Deploy to Cloud Run
+    needs: build-and-test
+    if: ${{ github.event_name != 'pull_request' && (needs.build-and-test.result == 'success' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
         with:
-          name: docker-image
-          path: voizeforms:${{ steps.set-tag.outputs.tag }}
-          retention-days: 1 
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          install_components: 'gke-gcloud-auth-plugin'
+          export_default_credentials: true
+
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build and Push Container
+        run: |
+          docker build -t ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker push ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          # Also tag as latest
+          docker tag ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REPOSITORY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          flags: '--allow-unauthenticated'  # Remove this if you want to restrict access
+          env_vars: |
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}
+            BASE_URL=https://voize.lucaskummer.com
+
+      - name: Show Output
+        run: |
+          echo "Deployed to ${{ steps.deploy.outputs.url }}" 
