@@ -100,4 +100,6 @@ jobs:
 
       - name: Show Output
         run: |
-          echo "Deployed to ${{ steps.deploy.outputs.url }}" 
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} --region=${{ env.REGION }} --format='value(status.url)')
+          echo "Deployed to $SERVICE_URL"
+          echo "Custom domain: https://voize.lucaskummer.com" 
