@@ -8,6 +8,10 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - ALLOWED_EMAILS=${ALLOWED_EMAILS}
+      - BASE_URL=${BASE_URL}
       # Future environment variables for MongoDB and API keys will go here
       # - MONGODB_URI=${MONGODB_URI}
       # - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
