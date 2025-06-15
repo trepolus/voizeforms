@@ -9,7 +9,7 @@ on:
 
 env:
   PROJECT_ID: voizeforms
-  SERVICE_NAME: voizeforms
+  SERVICE_NAME: voizeforms-api
   REGION: europe-west1
   REPOSITORY: europe-west1-docker.pkg.dev/voizeforms/voizeforms
   IMAGE_NAME: voizeforms
