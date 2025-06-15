@@ -2,9 +2,8 @@ package com.voizeforms
 
 import com.voizeforms.config.configureOAuth
 import com.voizeforms.routes.healthRoutes
-import com.voizeforms.routes.oauthRoutes
-import com.voizeforms.routes.simpleWebRoutes
 import com.voizeforms.routes.transcriptionRoutes
+import com.voizeforms.routes.webRoutes
 import com.voizeforms.service.MockTranscriptionService
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -35,8 +34,7 @@ fun Application.module() {
     // Configure routing
     routing {
         healthRoutes()
-        oauthRoutes(httpClient)
-        simpleWebRoutes()
+        webRoutes(httpClient)
         transcriptionRoutes(transcriptionService)
     }
 }
