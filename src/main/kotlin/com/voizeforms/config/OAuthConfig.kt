@@ -25,6 +25,10 @@ fun Application.configureOAuth() {
         cookie<UserSession>("user_session") {
             cookie.path = "/"
             cookie.maxAgeInSeconds = 86400 // 24 hours
+            // Set secure flag for HTTPS in production
+            cookie.secure = baseUrl.startsWith("https")
+            // Set SameSite to Lax for OAuth compatibility
+            cookie.extensions["SameSite"] = "Lax"
         }
     }
 

@@ -116,16 +116,23 @@ fun Route.webRoutes(httpClient: HttpClient) {
     }
 
     route("/auth") {
+        // Login route and callback - requires authentication
         authenticate("google-oauth") {
             get("/login") {
                 // This will automatically redirect to Google OAuth
             }
-
+            
+            // Callback route - handles OAuth response from Google
             get("/callback") {
+                call.application.log.info("OAuth callback received - query params: ${call.request.queryParameters.entries()}")
+                
                 val principal: OAuthAccessTokenResponse.OAuth2? = call.authentication.principal()
+                call.application.log.info("OAuth principal: ${if (principal != null) "present" else "null"}")
 
                 if (principal != null) {
                     try {
+                        call.application.log.info("Attempting to get user info from Google with access token")
+                        
                         // Get user info from Google
                         val userInfo: GoogleUserInfo = httpClient.get("https://www.googleapis.com/oauth2/v2/userinfo") {
                             headers {
@@ -133,9 +140,13 @@ fun Route.webRoutes(httpClient: HttpClient) {
                             }
                         }.body()
 
+                        call.application.log.info("Retrieved user info for: ${userInfo.email}")
+
                         // Get allowed emails from environment
                         val allowedEmails = System.getenv("ALLOWED_EMAILS")?.split(",")?.map { it.trim() }
                             ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
+
+                        call.application.log.info("Allowed emails: $allowedEmails")
 
                         // Validate email
                         if (!allowedEmails.contains(userInfo.email)) {
@@ -152,18 +163,20 @@ fun Route.webRoutes(httpClient: HttpClient) {
                         )
 
                         call.sessions.set(userSession)
+                        call.application.log.info("User authenticated successfully: ${userInfo.email}")
                         call.respondRedirect("/instructions")
                     } catch (e: Exception) {
                         call.application.log.error("Failed to get user info from Google", e)
                         call.respondRedirect("/?error=auth_failed")
                     }
                 } else {
+                    call.application.log.warn("OAuth callback received without principal")
                     call.respondRedirect("/?error=auth_failed")
                 }
             }
         }
-
-        // Logout endpoint
+        
+        // Logout endpoint - outside authentication
         get("/logout") {
             call.sessions.clear<UserSession>()
             call.respondRedirect("/")
