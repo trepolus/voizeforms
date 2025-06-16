@@ -37,6 +37,11 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
+    
+    // Database dependencies - MongoDB
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.11.1")
+    implementation("org.mongodb:bson-kotlinx:4.11.1")
+    
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.mockk:mockk:1.13.8")

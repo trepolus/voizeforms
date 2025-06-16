@@ -91,12 +91,13 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: ${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          flags: '--allow-unauthenticated'  # Remove this if you want to restrict access
+          flags: '--allow-unauthenticated'
           env_vars: |
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             ALLOWED_EMAILS=${{ secrets.ALLOWED_EMAILS }}
             BASE_URL=https://voize.lucaskummer.com
+            MONGODB_CONNECTION_STRING=${{ secrets.MONGODB_CONNECTION_STRING }}
 
       - name: Show Output
         run: |

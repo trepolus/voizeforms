@@ -1,5 +1,6 @@
 package com.voizeforms
 
+import com.voizeforms.config.MongoConfig
 import com.voizeforms.config.configureOAuth
 import com.voizeforms.routes.healthRoutes
 import com.voizeforms.routes.transcriptionRoutes
@@ -19,6 +20,9 @@ import io.ktor.server.routing.*
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
+    // Initialize MongoDB connection
+    MongoConfig.init(environment.config)
+    
     // Configure JSON serialization
     install(ContentNegotiation) {
         json()
