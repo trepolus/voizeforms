@@ -26,11 +26,10 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - ALLOWED_EMAILS=${ALLOWED_EMAILS}
-      - BASE_URL=${BASE_URL}
-      - MONGODB_CONNECTION_STRING=mongodb://mongo:27017/voizeforms
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-dev-client-id}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-dev-client-secret}
+      - ALLOWED_EMAILS=${ALLOWED_EMAILS:-dev@example.com}
+      - BASE_URL=${BASE_URL:-http://localhost:8080}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

@@ -8,13 +8,18 @@ object MongoConfig {
     private lateinit var client: MongoClient
     private lateinit var database: MongoDatabase
 
-    fun init(config: ApplicationConfig): MongoDatabase {
+        fun init(config: ApplicationConfig): MongoDatabase {
         val connectionString = config.property("mongodb.connectionString").getString()
         val databaseName = config.property("mongodb.database").getString()
-
+        
+        // Validate connection string is not empty
+        if (connectionString.isBlank()) {
+            throw IllegalStateException("MongoDB connection string cannot be empty. Check MONGODB_CONNECTION_STRING environment variable.")
+        }
+        
         client = MongoClient.create(connectionString)
         database = client.getDatabase(databaseName)
-
+        
         return database
     }
 
