@@ -3,9 +3,9 @@ val logback_version: String by project
 val ktor_version: String by project
 
 plugins {
-    kotlin("jvm") version "2.1.10"
+    kotlin("jvm") version "2.1.21"
     id("io.ktor.plugin") version "3.1.3"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
 }
 
 group = "com.example"
@@ -38,10 +38,11 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml:$ktor_version")
 
-    // Database dependencies - MongoDB
-    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.11.1")
-    implementation("org.mongodb:bson-kotlinx:4.11.1")
+    // Database dependencies - MongoDB (UPDATED TO LATEST)
+    implementation("org.mongodb:mongodb-driver-kotlin-coroutine:5.5.1")
+    implementation("org.mongodb:bson-kotlinx:5.5.1")
 
+    // Testing dependencies
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version")
@@ -49,6 +50,11 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    
+    // TestContainers for integration testing
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("org.testcontainers:mongodb:1.19.3")
 }
 
 tasks.named<Test>("test") {

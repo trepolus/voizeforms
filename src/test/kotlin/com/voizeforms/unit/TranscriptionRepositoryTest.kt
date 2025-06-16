@@ -2,7 +2,7 @@ package com.voizeforms.unit
 
 import com.voizeforms.model.Transcription
 import com.voizeforms.repository.TranscriptionRepository
-import com.voizeforms.repository.MongoTranscriptionRepository
+import com.voizeforms.repository.InMemoryTranscriptionRepository
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
@@ -16,9 +16,8 @@ class TranscriptionRepositoryTest {
     
     @BeforeTest
     fun setup() {
-        // For now, we'll use a mock implementation
-        // Later we'll switch to test containers for integration testing
-        repository = MongoTranscriptionRepository()
+        // Use pure in-memory implementation for fast unit testing
+        repository = InMemoryTranscriptionRepository()
     }
     
     @Test
