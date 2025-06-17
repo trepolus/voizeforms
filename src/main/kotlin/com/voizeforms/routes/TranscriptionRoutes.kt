@@ -3,20 +3,20 @@ package com.voizeforms.routes
 import com.voizeforms.model.TranscriptionResult
 import com.voizeforms.model.UserSession
 import com.voizeforms.service.TranscriptionService
+import com.voizeforms.util.Routes
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
-import com.voizeforms.util.Routes
-import org.koin.ktor.ext.getKoin
 import org.koin.core.context.loadKoinModules
 import org.koin.dsl.module
-import com.voizeforms.model.ErrorInfo
-import com.voizeforms.model.ErrorResponse
+import org.koin.ktor.ext.getKoin
+import org.koin.ktor.plugin.Koin
+import org.slf4j.LoggerFactory
 
 fun Route.transcriptionRoutes() {
     val transcriptionService = application.getKoin().get<TranscriptionService>()
@@ -25,10 +25,7 @@ fun Route.transcriptionRoutes() {
             post {
                 try {
                     if (call.request.contentLength() == 0L) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(ErrorInfo("NO_AUDIO", "No audio data provided"))
-                        )
+                        call.respond(HttpStatusCode.BadRequest, "No audio data provided")
                         return@post
                     }
 
@@ -198,17 +195,25 @@ fun Route.sessionManagementRoutes() {
 }
 
 fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
-    val koin = this.application.getKoin()
-    if (koin.getOrNull<TranscriptionService>() == null) {
-        loadKoinModules(module { single { transcriptionService } })
+    if (this.application.pluginOrNull(Koin) == null) {
+        this.application.install(Koin) { modules(module { single { transcriptionService } }) }
+    } else {
+        val koin = this.application.getKoin()
+        if (koin.getOrNull<TranscriptionService>() == null) {
+            loadKoinModules(module { single { transcriptionService } })
+        }
     }
     transcriptionRoutes()
 }
 
 fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
-    val koin = this.application.getKoin()
-    if (koin.getOrNull<TranscriptionService>() == null) {
-        loadKoinModules(module { single { transcriptionService } })
+    if (this.application.pluginOrNull(Koin) == null) {
+        this.application.install(Koin) { modules(module { single { transcriptionService } }) }
+    } else {
+        val koin = this.application.getKoin()
+        if (koin.getOrNull<TranscriptionService>() == null) {
+            loadKoinModules(module { single { transcriptionService } })
+        }
     }
     sessionManagementRoutes()
 } 
