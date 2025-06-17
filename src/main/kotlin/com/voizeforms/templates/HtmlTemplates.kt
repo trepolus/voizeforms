@@ -117,7 +117,8 @@ object HtmlTemplates {
                     try {
                         const response = await fetch('/api/v1/transcription/session', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' }
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include'
                         });
                         
                         if (response.ok) {
@@ -129,8 +130,10 @@ object HtmlTemplates {
                             status.textContent = `Recording - Session: ${'$'}{currentSessionId}`;
                             transcriptionOutput.textContent = '';
                             
-                            // Start SSE connection
-                            eventSource = new EventSource(`/api/v1/transcription/stream/${'$'}{currentSessionId}`);
+                            // Start SSE connection  
+                            eventSource = new EventSource(`/api/v1/transcription/stream/${'$'}{currentSessionId}`, {
+                                withCredentials: true
+                            });
                             eventSource.onmessage = (event) => {
                                 const result = JSON.parse(event.data);
                                 transcriptionOutput.textContent += result.text + ' ';
@@ -152,7 +155,8 @@ object HtmlTemplates {
                     if (currentSessionId && eventSource) {
                         try {
                             const response = await fetch(`/api/v1/transcription/session/${'$'}{currentSessionId}`, {
-                                method: 'DELETE'
+                                method: 'DELETE',
+                                credentials: 'include'
                             });
                             
                             if (response.ok) {
@@ -182,7 +186,8 @@ object HtmlTemplates {
                             const response = await fetch(`/api/v1/transcription/session/${'$'}{currentSessionId}/chunk`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/octet-stream' },
-                                body: new TextEncoder().encode(speechInput.value.trim())
+                                body: new TextEncoder().encode(speechInput.value.trim()),
+                                credentials: 'include'
                             });
                             
                             if (response.ok) {
@@ -197,7 +202,9 @@ object HtmlTemplates {
                 // Load history
                 async function refreshHistory() {
                     try {
-                        const response = await fetch('/api/v1/transcription/history');
+                        const response = await fetch('/api/v1/transcription/history', {
+                            credentials: 'include'
+                        });
                         const history = await response.json();
                         
                         if (Array.isArray(history) && history.length > 0) {

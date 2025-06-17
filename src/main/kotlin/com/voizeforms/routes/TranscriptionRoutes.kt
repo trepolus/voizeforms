@@ -1,25 +1,17 @@
 package com.voizeforms.routes
 
 import com.voizeforms.model.TranscriptionResult
-import com.voizeforms.model.UserSession
 import com.voizeforms.service.TranscriptionService
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-
-@Serializable
-data class SessionResponse(val sessionId: String)
-
-@Serializable
-data class SavedTranscriptionResponse(val savedId: String?)
+import org.slf4j.LoggerFactory
 
 fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
-    authenticate("google-oauth") {
+    authenticate("user-session") {
         route("/api/v1/transcribe") {
             post {
                 try {
@@ -44,7 +36,7 @@ fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
                 }
             }
         }
-        
+
         // SSE streaming route for session-based transcription
         route("/api/v1/transcription/stream") {
             get("/{sessionId}") {
@@ -75,71 +67,119 @@ fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
 }
 
 fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
-    authenticate("google-oauth") {
-        route("/api/v1/transcription/session") {
+    val logger = LoggerFactory.getLogger("SessionManagementRoutes")
+
+    route("/api/v1/transcription") {
+        authenticate("user-session") {
+
             // Start new transcription session
-            post {
+            post("/session") {
+                logger.info("POST /session - Starting new transcription session")
                 try {
-                    val userSession = call.sessions.get<UserSession>()
-                    val userId = userSession?.userId ?: "anonymous"
-                    
+                    val principal = call.principal<UserIdPrincipal>()
+                    val userId = principal?.name ?: "anonymous"
+                    logger.info("Starting session for user: $userId")
+
                     val sessionId = transcriptionService.startTranscriptionSession(userId)
-                    call.respond(HttpStatusCode.Created, SessionResponse(sessionId))
+                    logger.info("Created session with ID: $sessionId")
+
+                    call.respond(mapOf("sessionId" to sessionId))
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Error starting session: ${e.message}")
+                    logger.error("Error starting transcription session", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to start session"))
                 }
             }
-            
-            // Add audio chunk to session
-            post("/{sessionId}/chunk") {
+
+            // Add audio/text chunk to session
+            post("/session/{sessionId}/chunk") {
+                logger.info("POST /session/{sessionId}/chunk - Adding chunk to session")
                 try {
                     val sessionId = call.parameters["sessionId"]
-                    if (sessionId.isNullOrBlank()) {
-                        call.respond(HttpStatusCode.BadRequest, "Session ID is required")
+                    if (sessionId == null) {
+                        logger.warn("Session ID missing in chunk request")
+                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Session ID required"))
                         return@post
                     }
-                    
-                    if (call.request.contentLength() == 0L) {
-                        call.respond(HttpStatusCode.BadRequest, "No audio data provided")
+
+                    logger.info("Processing chunk for session: $sessionId")
+
+                    val requestBody = call.receiveText()
+                    logger.info("Received chunk data: '${requestBody.take(100)}${if (requestBody.length > 100) "..." else ""}'")
+
+                    if (requestBody.isBlank()) {
+                        logger.warn("Empty chunk data received for session: $sessionId")
+                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Audio data required"))
                         return@post
                     }
-                    
-                    val audioData = call.receive<ByteArray>()
-                    transcriptionService.processAudioChunk(sessionId, audioData)
-                    call.respond(HttpStatusCode.OK, "Chunk processed")
+
+                    // Convert text to bytes for processing (simulation)
+                    val audioChunk = requestBody.toByteArray()
+                    transcriptionService.processAudioChunk(sessionId, audioChunk)
+                    logger.info("Successfully processed chunk for session: $sessionId")
+
+                    call.respond(HttpStatusCode.OK, mapOf("status" to "chunk processed"))
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Error processing chunk: ${e.message}")
+                    logger.error("Error processing audio chunk", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to process chunk"))
                 }
             }
-            
-            // End transcription session
-            delete("/{sessionId}") {
+
+            // End session and save final transcription
+            delete("/session/{sessionId}") {
+                logger.info("DELETE /session/{sessionId} - Ending transcription session")
                 try {
                     val sessionId = call.parameters["sessionId"]
-                    if (sessionId.isNullOrBlank()) {
-                        call.respond(HttpStatusCode.BadRequest, "Session ID is required")
+                    if (sessionId == null) {
+                        logger.warn("Session ID missing in delete request")
+                        call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Session ID required"))
                         return@delete
                     }
-                    
-                    val finalText = call.request.queryParameters["finalText"]
-                    val savedId = transcriptionService.endTranscriptionSession(sessionId, finalText)
-                    call.respond(HttpStatusCode.OK, SavedTranscriptionResponse(savedId))
+
+                    logger.info("Ending session: $sessionId")
+
+                    // Get session info before ending
+                    val sessionInfo = transcriptionService.getSessionInfo(sessionId)
+                    logger.info("Session info before ending: $sessionInfo")
+
+                    val finalTranscriptionId = transcriptionService.endTranscriptionSession(sessionId)
+                    logger.info("Session ended, final transcription ID: $finalTranscriptionId")
+
+                    val responseMessage = if (finalTranscriptionId != null && finalTranscriptionId != "unknown") {
+                        "Session saved with ID: $finalTranscriptionId"
+                    } else {
+                        "Session ended but save failed - ID: $finalTranscriptionId"
+                    }
+
+                    logger.info("Responding with: $responseMessage")
+                    call.respondText(responseMessage)
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Error ending session: ${e.message}")
+                    logger.error("Error ending transcription session", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to end session"))
                 }
             }
-        }
-        
-        // Get transcription history
-        get("/api/v1/transcription/history") {
-            try {
-                val userSession = call.sessions.get<UserSession>()
-                val userId = userSession?.userId ?: "anonymous"
-                
-                // For now, return empty list - we'll implement this when we have repository method
-                call.respond(HttpStatusCode.OK, emptyList<String>())
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving history: ${e.message}")
+
+            // Get transcription history
+            get("/history") {
+                logger.info("GET /history - Retrieving transcription history")
+                try {
+                    val principal = call.principal<UserIdPrincipal>()
+                    val userId = principal?.name ?: "anonymous"
+                    logger.info("Retrieving history for user: $userId")
+
+                    val transcriptions = transcriptionService.getTranscriptionsByUserId(userId)
+                    logger.info("Found ${transcriptions.size} transcriptions for user: $userId")
+
+                    if (transcriptions.isEmpty()) {
+                        logger.info("No transcriptions found, returning empty message")
+                    } else {
+                        logger.info("Returning transcriptions: ${transcriptions.map { it.sessionId }}")
+                    }
+
+                    call.respond(transcriptions)
+                } catch (e: Exception) {
+                    logger.error("Error retrieving transcription history", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to retrieve history"))
+                }
             }
         }
     }

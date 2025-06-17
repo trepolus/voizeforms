@@ -2,6 +2,7 @@ package com.voizeforms.service
 
 import com.voizeforms.model.TranscriptionResult
 import com.voizeforms.model.SessionInfo
+import com.voizeforms.model.Transcription
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -26,4 +27,16 @@ class MockTranscriptionService : TranscriptionService {
     override suspend fun endTranscriptionSession(sessionId: String, finalText: String?): String? = "mock-saved-id"
     override suspend fun getSessionInfo(sessionId: String): SessionInfo? = 
         SessionInfo(sessionId, "mock-user", true, System.currentTimeMillis())
+    override suspend fun getTranscriptionsByUserId(userId: String): List<Transcription> = 
+        listOf(
+            Transcription(
+                id = "mock-transcription-1",
+                sessionId = "mock-session-1",
+                chunk = "Mock transcription text for user $userId",
+                confidence = 0.95,
+                timestamp = System.currentTimeMillis(),
+                isComplete = true,
+                userId = userId
+            )
+        )
 } 

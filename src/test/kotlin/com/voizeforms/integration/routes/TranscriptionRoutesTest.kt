@@ -18,7 +18,7 @@ class TranscriptionRoutesTest {
 
     private fun Application.configureTestAuth() {
         install(Authentication) {
-            basic("google-oauth") {
+            basic("user-session") {
                 realm = "Test"
                 validate { credentials ->
                     // For testing, accept any credentials

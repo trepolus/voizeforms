@@ -6,6 +6,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.response.*
 import io.ktor.server.sessions.*
 
 fun Application.configureOAuth() {
@@ -50,6 +51,22 @@ fun Application.configureOAuth() {
                 )
             }
             client = HttpClient(CIO)
+        }
+        
+        // Session-based authentication for API routes
+        session<UserSession>("user-session") {
+            validate { session ->
+                // Validate that the session is still valid
+                if (session.userId.isNotEmpty() && session.email.isNotEmpty()) {
+                    session
+                } else {
+                    null
+                }
+            }
+            challenge {
+                // Redirect to login if no valid session
+                call.respondRedirect("/")
+            }
         }
     }
 } 

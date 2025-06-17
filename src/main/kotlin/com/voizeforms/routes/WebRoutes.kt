@@ -61,11 +61,6 @@ fun Route.webRoutes(httpClient: HttpClient) {
         )
     }
 
-    // Legacy instructions redirect to dashboard
-    get("/instructions") {
-        call.respondRedirect("/dashboard")
-    }
-
     route("/auth") {
         // Login route and callback - requires authentication
         authenticate("google-oauth") {

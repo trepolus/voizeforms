@@ -30,7 +30,7 @@ class SessionManagementRoutesTest {
             cookie<com.voizeforms.model.UserSession>("user_session")
         }
         install(Authentication) {
-            basic("google-oauth") {
+            basic("user-session") {
                 realm = "Test"
                 validate { credentials ->
                     if (credentials.name == "test" && credentials.password == "test") {
@@ -61,7 +61,7 @@ class SessionManagementRoutesTest {
         }
 
         // Then
-        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(HttpStatusCode.OK, response.status)
         val responseBody = response.bodyAsText()
         val json = Json.parseToJsonElement(responseBody).jsonObject
         assertNotNull(json["sessionId"]?.jsonPrimitive?.content)
@@ -100,13 +100,12 @@ class SessionManagementRoutesTest {
             }
         }
         val sessionId = "test-session-123"
-        val audioData = "Hello world test".toByteArray()
 
         // When
         val response = client.post("/api/v1/transcription/session/$sessionId/chunk") {
             basicAuth("test", "test")
-            header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
-            setBody(audioData)
+            header(HttpHeaders.ContentType, ContentType.Text.Plain.toString())
+            setBody("Hello world test")
         }
 
         // Then
@@ -128,8 +127,7 @@ class SessionManagementRoutesTest {
         // When
         val response = client.post("/api/v1/transcription/session/$sessionId/chunk") {
             basicAuth("test", "test")
-            header(HttpHeaders.ContentType, ContentType.Application.OctetStream.toString())
-            // No body
+            header(HttpHeaders.ContentType, ContentType.Text.Plain.toString())
         }
 
         // Then
@@ -156,8 +154,7 @@ class SessionManagementRoutesTest {
         // Then
         assertEquals(HttpStatusCode.OK, response.status)
         val responseBody = response.bodyAsText()
-        val json = Json.parseToJsonElement(responseBody).jsonObject
-        assertNotNull(json["savedId"]?.jsonPrimitive?.content)
+        assertTrue(responseBody.contains("Session saved with ID:"))
     }
 
     @Test

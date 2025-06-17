@@ -13,4 +13,5 @@ interface TranscriptionService {
     fun subscribeToTranscriptionStream(sessionId: String): Flow<TranscriptionResult>
     suspend fun endTranscriptionSession(sessionId: String, finalText: String? = null): String?
     suspend fun getSessionInfo(sessionId: String): SessionInfo?
+    suspend fun getTranscriptionsByUserId(userId: String): List<com.voizeforms.model.Transcription>
 } 
