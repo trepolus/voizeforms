@@ -36,14 +36,13 @@ fun Application.module() {
     }
 
     // Retrieve dependencies from Koin
-    val transcriptionService by inject<com.voizeforms.service.TranscriptionService>()
     val httpClient by inject<io.ktor.client.HttpClient>()
 
     // Configure routing
     routing {
         healthRoutes()
         webRoutes(httpClient)
-        transcriptionRoutes(transcriptionService)
-        sessionManagementRoutes(transcriptionService)
+        transcriptionRoutes()
+        sessionManagementRoutes()
     }
 }

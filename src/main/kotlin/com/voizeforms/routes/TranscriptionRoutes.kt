@@ -11,15 +11,24 @@ import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import com.voizeforms.util.Routes
+import org.koin.ktor.ext.getKoin
+import org.koin.core.context.loadKoinModules
+import org.koin.dsl.module
+import com.voizeforms.model.ErrorInfo
+import com.voizeforms.model.ErrorResponse
 
-fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
+fun Route.transcriptionRoutes() {
+    val transcriptionService = application.getKoin().get<TranscriptionService>()
     authenticate("user-session") {
-        route("/api/v1/transcribe") {
+        route(Routes.TRANSCRIBE) {
             post {
                 try {
-                    // Check if body is empty
                     if (call.request.contentLength() == 0L) {
-                        call.respond(HttpStatusCode.BadRequest, "No audio data provided")
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(ErrorInfo("NO_AUDIO", "No audio data provided"))
+                        )
                         return@post
                     }
 
@@ -40,7 +49,7 @@ fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
         }
 
         // SSE streaming route for session-based transcription
-        route("/api/v1/transcription/stream") {
+        route(Routes.TRANSCRIPTION_STREAM) {
             get("/{sessionId}") {
                 try {
                     val sessionId = call.parameters["sessionId"]
@@ -68,10 +77,11 @@ fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
     }
 }
 
-fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
+fun Route.sessionManagementRoutes() {
+    val transcriptionService = application.getKoin().get<TranscriptionService>()
     val logger = LoggerFactory.getLogger("SessionManagementRoutes")
 
-    route("/api/v1/transcription") {
+    route("${Routes.API_V1}/transcription") {
         authenticate("user-session") {
 
             // Start new transcription session
@@ -185,4 +195,20 @@ fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
             }
         }
     }
+}
+
+fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
+    val koin = this.application.getKoin()
+    if (koin.getOrNull<TranscriptionService>() == null) {
+        loadKoinModules(module { single { transcriptionService } })
+    }
+    transcriptionRoutes()
+}
+
+fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
+    val koin = this.application.getKoin()
+    if (koin.getOrNull<TranscriptionService>() == null) {
+        loadKoinModules(module { single { transcriptionService } })
+    }
+    sessionManagementRoutes()
 } 
