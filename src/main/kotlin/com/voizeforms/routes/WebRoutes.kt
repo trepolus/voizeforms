@@ -1,6 +1,7 @@
 package com.voizeforms.routes
 
 import com.voizeforms.model.UserSession
+import com.voizeforms.templates.HtmlTemplates
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -25,11 +26,11 @@ data class GoogleUserInfo(
 )
 
 fun Route.webRoutes(httpClient: HttpClient) {
-    // Root endpoint - shows login or redirects to instructions
+    // Root endpoint - shows login or redirects to dashboard
     get("/") {
         val session = call.sessions.get<UserSession>()
         if (session != null) {
-            call.respondRedirect("/instructions")
+            call.respondRedirect("/dashboard")
         } else {
             val error = call.request.queryParameters["error"]
             val errorMessage = when (error) {
@@ -40,79 +41,29 @@ fun Route.webRoutes(httpClient: HttpClient) {
 
             call.respondText(
                 contentType = ContentType.Text.Html,
-                text = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>VoizeForms - Login</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                        .login-btn { 
-                            background: #4285f4; color: white; padding: 12px 24px; 
-                            text-decoration: none; border-radius: 4px; display: inline-block;
-                            margin: 20px 0;
-                        }
-                        .login-btn:hover { background: #357ae8; }
-                    </style>
-                </head>
-                <body>
-                    <h1>🎤 VoizeForms</h1>
-                    <p>Real-time Voice-to-Text Form Assistant</p>
-                    <a href="/auth/login" class="login-btn">🔐 Login with Google</a>
-                    $errorMessage
-                </body>
-                </html>
-                """.trimIndent()
+                text = HtmlTemplates.loginPage(errorMessage)
             )
         }
     }
 
-    // Instructions page - shown after successful login
-    get("/instructions") {
+    // Dashboard page - interactive voice note interface
+    get("/dashboard") {
         val session = call.sessions.get<UserSession>()
         if (session == null) {
             call.respondRedirect("/")
             return@get
         }
 
+        val baseUrl = System.getenv("BASE_URL") ?: "http://localhost:8080"
         call.respondText(
             contentType = ContentType.Text.Html,
-            text = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>VoizeForms - Instructions</title>
-                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-                    .api-section { margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; }
-                    code { background: #e9ecef; padding: 2px 4px; border-radius: 3px; }
-                     .user-info { background: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-                </style>
-            </head>
-            <body>
-                <h1>🎤 VoizeForms</h1>
-                <div class="user-info">
-                    <strong>✅ Authenticated as:</strong> ${session.name} (${session.email})
-                    <a href="/auth/logout" style="float: right; background: #dc3545; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px;">Logout</a>
-                </div>
-                
-                <div class="api-section">
-                    <h2>API Usage</h2>
-                    <p>You are authenticated. You can now use the transcription API.</p>
-                    <h3>Test Transcription</h3>
-                    <p>Make a POST request to <code>/api/v1/transcribe</code> with your audio file.</p>
-                    <code>curl -X POST -H "Content-Type: application/octet-stream" --data-binary @audio.wav ${
-                System.getenv(
-                    "BASE_URL"
-                )
-            }/api/v1/transcribe</code>
-                </div>
-                
-                <p><a href="/auth/logout">← Logout</a></p>
-            </body>
-            </html>
-            """.trimIndent()
+            text = HtmlTemplates.dashboardPage(session, baseUrl)
         )
+    }
+
+    // Legacy instructions redirect to dashboard
+    get("/instructions") {
+        call.respondRedirect("/dashboard")
     }
 
     route("/auth") {
@@ -164,7 +115,7 @@ fun Route.webRoutes(httpClient: HttpClient) {
 
                         call.sessions.set(userSession)
                         call.application.log.info("User authenticated successfully: ${userInfo.email}")
-                        call.respondRedirect("/instructions")
+                        call.respondRedirect("/dashboard")
                     } catch (e: Exception) {
                         call.application.log.error("Failed to get user info from Google", e)
                         call.respondRedirect("/?error=auth_failed")

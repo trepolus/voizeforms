@@ -4,6 +4,7 @@ import com.voizeforms.config.MongoConfig
 import com.voizeforms.config.configureOAuth
 import com.voizeforms.repository.TranscriptionRepositoryFactory
 import com.voizeforms.routes.healthRoutes
+import com.voizeforms.routes.sessionManagementRoutes
 import com.voizeforms.routes.transcriptionRoutes
 import com.voizeforms.routes.webRoutes
 import com.voizeforms.service.StreamingTranscriptionService
@@ -70,5 +71,6 @@ fun Application.module() {
         healthRoutes()
         webRoutes(httpClient)
         transcriptionRoutes(transcriptionService)
+        sessionManagementRoutes(transcriptionService)
     }
 }
