@@ -35,5 +35,32 @@ fun Route.transcriptionRoutes(transcriptionService: TranscriptionService) {
                 }
             }
         }
+        
+        // SSE streaming route for session-based transcription
+        route("/api/v1/transcription/stream") {
+            get("/{sessionId}") {
+                try {
+                    val sessionId = call.parameters["sessionId"]
+                    if (sessionId.isNullOrBlank()) {
+                        call.respond(HttpStatusCode.BadRequest, "Session ID is required")
+                        return@get
+                    }
+
+                    call.response.cacheControl(CacheControl.NoCache(null))
+
+                    call.respondTextWriter(contentType = ContentType.Text.EventStream) {
+                        transcriptionService.subscribeToTranscriptionStream(sessionId).collect { result ->
+                            // SSE format: data: <JSON>\n\n
+                            write("data: ")
+                            write(Json.encodeToString(TranscriptionResult.serializer(), result))
+                            write("\n\n")
+                            flush()
+                        }
+                    }
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error streaming transcription: ${e.message}")
+                }
+            }
+        }
     }
 } 

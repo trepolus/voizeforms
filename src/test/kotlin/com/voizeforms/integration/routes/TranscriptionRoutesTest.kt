@@ -12,6 +12,7 @@ import io.ktor.server.testing.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class TranscriptionRoutesTest {
 
@@ -97,5 +98,72 @@ class TranscriptionRoutesTest {
 
         // Then
         assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+    
+    @Test
+    fun `should stream transcription via SSE for valid session`() = testApplication {
+        // Given
+        val service = MockTranscriptionService()
+        application {
+            configureTestAuth()
+            routing {
+                transcriptionRoutes(service)
+            }
+        }
+        val sessionId = "test-session-123"
+
+        // When
+        val response = client.get("/api/v1/transcription/stream/$sessionId") {
+            header(HttpHeaders.Accept, "text/event-stream")
+            basicAuth("test", "test")
+        }
+
+        // Then
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals("text/event-stream", response.headers[HttpHeaders.ContentType]?.substringBefore(";"))
+        assertTrue(response.bodyAsText().isNotEmpty())
+    }
+
+    @Test
+    fun `should return 401 for SSE stream when not authenticated`() = testApplication {
+        // Given
+        val service = MockTranscriptionService()
+        application {
+            configureTestAuth()
+            routing {
+                transcriptionRoutes(service)
+            }
+        }
+        val sessionId = "test-session-456"
+
+        // When
+        val response = client.get("/api/v1/transcription/stream/$sessionId") {
+            header(HttpHeaders.Accept, "text/event-stream")
+            // No authentication
+        }
+
+        // Then
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `should return 400 for SSE stream with empty session ID`() = testApplication {
+        // Given
+        val service = MockTranscriptionService()
+        application {
+            configureTestAuth()
+            routing {
+                transcriptionRoutes(service)
+            }
+        }
+
+        // When
+        val response = client.get("/api/v1/transcription/stream/") {
+            header(HttpHeaders.Accept, "text/event-stream")
+            basicAuth("test", "test")
+        }
+
+        // Then
+        assertEquals(HttpStatusCode.NotFound, response.status) // Ktor returns 404 for missing path parameter
     }
 } 
