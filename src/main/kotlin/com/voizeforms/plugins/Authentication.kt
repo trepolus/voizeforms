@@ -1,4 +1,4 @@
-package com.voizeforms.config
+package com.voizeforms.plugins
 
 import com.voizeforms.model.UserSession
 import io.ktor.client.*
@@ -9,7 +9,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.sessions.*
 
-fun Application.configureOAuth() {
+fun Application.configureAuthentication() {
     val googleClientId = System.getenv("GOOGLE_CLIENT_ID")
         ?: throw IllegalStateException("GOOGLE_CLIENT_ID environment variable is required")
     val googleClientSecret = System.getenv("GOOGLE_CLIENT_SECRET")
@@ -19,11 +19,9 @@ fun Application.configureOAuth() {
 
     log.info("OAuth callback redirected: $redirectUrl")
 
-    // Get allowed emails from environment
     System.getenv("ALLOWED_EMAILS")?.split(",")?.map { it.trim() }
         ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
 
-    // Configure sessions
     install(Sessions) {
         cookie<UserSession>("user_session") {
             cookie.path = "/"
@@ -52,11 +50,8 @@ fun Application.configureOAuth() {
             }
             client = HttpClient(CIO)
         }
-        
-        // Session-based authentication for API routes
         session<UserSession>("user-session") {
             validate { session ->
-                // Validate that the session is still valid
                 if (session.userId.isNotEmpty() && session.email.isNotEmpty()) {
                     session
                 } else {
@@ -64,7 +59,6 @@ fun Application.configureOAuth() {
                 }
             }
             challenge {
-                // Redirect to login if no valid session
                 call.respondRedirect("/")
             }
         }

@@ -1,4 +1,4 @@
-package com.example
+package com.voizeforms.plugins
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.calllogging.*
@@ -10,4 +10,4 @@ fun Application.configureMonitoring() {
         level = Level.INFO
         filter { call -> call.request.path().startsWith("/") }
     }
-}
+} 
