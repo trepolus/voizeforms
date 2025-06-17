@@ -19,8 +19,16 @@ fun Application.configureAuthentication() {
 
     log.info("OAuth callback redirected: $redirectUrl")
 
-    System.getenv("ALLOWED_EMAILS")?.split(",")?.map { it.trim() }
+    val allowedEmails = System.getenv("ALLOWED_EMAILS")
+        ?.splitToSequence(',',';')
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.toList()
         ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
+
+    if (allowedEmails.isEmpty()) {
+        throw IllegalStateException("ALLOWED_EMAILS environment variable is empty")
+    }
 
     install(Sessions) {
         cookie<UserSession>("user_session") {

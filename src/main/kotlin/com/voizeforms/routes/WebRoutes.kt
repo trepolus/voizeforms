@@ -89,7 +89,11 @@ fun Route.webRoutes(httpClient: HttpClient) {
                         call.application.log.info("Retrieved user info for: ${userInfo.email}")
 
                         // Get allowed emails from environment
-                        val allowedEmails = System.getenv("ALLOWED_EMAILS")?.split(",")?.map { it.trim() }
+                        val allowedEmails = System.getenv("ALLOWED_EMAILS")
+                            ?.splitToSequence(',', ';')
+                            ?.map { it.trim() }
+                            ?.filter { it.isNotEmpty() }
+                            ?.toList()
                             ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
 
                         call.application.log.info("Allowed emails: $allowedEmails")
