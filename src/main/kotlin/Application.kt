@@ -13,6 +13,9 @@ import io.ktor.client.engine.cio.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
+import com.voizeforms.di.appModules
+import org.koin.ktor.plugin.Koin
+import org.koin.ktor.ext.inject
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
@@ -27,14 +30,14 @@ fun Application.module() {
     configureMonitoring()
     configureAuthentication()
 
-    // Initialize services with dependency injection
-    val transcriptionRepository = TranscriptionRepositoryFactory.createMongoRepository()
-    val transcriptionService = StreamingTranscriptionService(transcriptionRepository)
-    val httpClient = HttpClient(CIO) {
-        install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
-            json()
-        }
+    // Install Koin for DI
+    install(Koin) {
+        modules(appModules)
     }
+
+    // Retrieve dependencies from Koin
+    val transcriptionService by inject<com.voizeforms.service.TranscriptionService>()
+    val httpClient by inject<io.ktor.client.HttpClient>()
 
     // Configure routing
     routing {
