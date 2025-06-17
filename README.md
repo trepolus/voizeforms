@@ -55,25 +55,31 @@ Visit `http://localhost:8080` to login and get started.
 
 ## 🛠️ API Reference
 
-All API endpoints require OAuth authentication.
+All endpoints are OAuth-protected (session cookie) and live under `/api/v1/*`.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/` | Login page |
-| `GET` | `/auth/login` | Start OAuth flow |
-| `GET` | `/auth/logout` | Logout |
-| `POST` | `/api/v1/transcribe` | Submit audio for transcription |
+| `GET`  | `/health` | Health check |
+| `POST` | `/api/v1/transcribe` | One-shot transcription (cold flow) |
+| `POST` | `/api/v1/transcription/session` | Start a new streaming session; returns `{ "sessionId": "…" }` |
+| `POST` | `/api/v1/transcription/session/{sessionId}/chunk` | Add an audio/text chunk to the session |
+| `DELETE` | `/api/v1/transcription/session/{sessionId}` | End session & persist final text |
+| `GET`  | `/api/v1/transcription/stream/{sessionId}` | Server-Sent Events stream of live transcript chunks |
+| `GET`  | `/api/v1/transcription/history` | List past transcriptions for the logged-in user |
 
-### Example Usage
-
-After authentication, submit audio for transcription:
-
+### Curl snippets
 ```bash
-curl -X POST \
-  -H "Content-Type: application/octet-stream" \
-  --data-binary @audio.wav \
-  http://localhost:8080/api/v1/transcribe
+# Cold flow
+curl -X POST --data-binary @audio.wav \
+     -H "Content-Type: application/octet-stream" \
+     -b "cookie from /auth/login" \
+     http://localhost:8080/api/v1/transcribe
+
+# Start a live session
+SESSION=$(curl -sb cookies.txt -X POST http://localhost:8080/api/v1/transcription/session | jq -r .sessionId)
+
+# Stream it
+curl -N http://localhost:8080/api/v1/transcription/stream/$SESSION
 ```
 
 ## 🔒 Authentication
