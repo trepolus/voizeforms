@@ -1,12 +1,14 @@
 package com.voizeforms.routes
 
 import com.voizeforms.model.TranscriptionResult
+import com.voizeforms.model.UserSession
 import com.voizeforms.service.TranscriptionService
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
@@ -76,9 +78,9 @@ fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
             post("/session") {
                 logger.info("POST /session - Starting new transcription session")
                 try {
-                    val principal = call.principal<UserIdPrincipal>()
-                    val userId = principal?.name ?: "anonymous"
-                    logger.info("Starting session for user: $userId")
+                    val userSession = call.sessions.get<UserSession>()
+                    val userId = userSession?.email ?: "anonymous"
+                    logger.info("Starting session for user: $userId (from session: $userSession)")
 
                     val sessionId = transcriptionService.startTranscriptionSession(userId)
                     logger.info("Created session with ID: $sessionId")
@@ -151,7 +153,7 @@ fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
                     }
 
                     logger.info("Responding with: $responseMessage")
-                    call.respondText(responseMessage)
+                    call.respond(mapOf("message" to responseMessage, "savedId" to finalTranscriptionId))
                 } catch (e: Exception) {
                     logger.error("Error ending transcription session", e)
                     call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Failed to end session"))
@@ -162,9 +164,9 @@ fun Route.sessionManagementRoutes(transcriptionService: TranscriptionService) {
             get("/history") {
                 logger.info("GET /history - Retrieving transcription history")
                 try {
-                    val principal = call.principal<UserIdPrincipal>()
-                    val userId = principal?.name ?: "anonymous"
-                    logger.info("Retrieving history for user: $userId")
+                    val userSession = call.sessions.get<UserSession>()
+                    val userId = userSession?.email ?: "anonymous"
+                    logger.info("Retrieving history for user: $userId (from session: $userSession)")
 
                     val transcriptions = transcriptionService.getTranscriptionsByUserId(userId)
                     logger.info("Found ${transcriptions.size} transcriptions for user: $userId")

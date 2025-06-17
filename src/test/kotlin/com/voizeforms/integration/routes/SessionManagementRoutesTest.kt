@@ -154,7 +154,9 @@ class SessionManagementRoutesTest {
         // Then
         assertEquals(HttpStatusCode.OK, response.status)
         val responseBody = response.bodyAsText()
-        assertTrue(responseBody.contains("Session saved with ID:"))
+        val json = Json.parseToJsonElement(responseBody).jsonObject
+        assertNotNull(json["message"]?.jsonPrimitive?.content)
+        assertTrue(json["message"]?.jsonPrimitive?.content?.contains("Session saved with ID:") == true)
     }
 
     @Test
