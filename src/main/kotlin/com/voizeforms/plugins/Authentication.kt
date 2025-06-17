@@ -20,10 +20,9 @@ fun Application.configureAuthentication() {
     log.info("OAuth callback redirected: $redirectUrl")
 
     val allowedEmails = System.getenv("ALLOWED_EMAILS")
-        ?.splitToSequence(',',';')
-        ?.map { it.trim() }
+        ?.split(',', ';')
+        ?.map { it.trim().lowercase() }
         ?.filter { it.isNotEmpty() }
-        ?.toList()
         ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
 
     if (allowedEmails.isEmpty()) {
@@ -61,7 +60,7 @@ fun Application.configureAuthentication() {
         session<UserSession>("user-session") {
             validate { session ->
                 if (session.userId.isNotEmpty() && session.email.isNotEmpty()) {
-                    session
+                    session.copy(email = session.email.lowercase())
                 } else {
                     null
                 }

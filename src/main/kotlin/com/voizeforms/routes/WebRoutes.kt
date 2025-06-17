@@ -90,16 +90,15 @@ fun Route.webRoutes(httpClient: HttpClient) {
 
                         // Get allowed emails from environment
                         val allowedEmails = System.getenv("ALLOWED_EMAILS")
-                            ?.splitToSequence(',', ';')
-                            ?.map { it.trim() }
+                            ?.split(',', ';')
+                            ?.map { it.trim().lowercase() }
                             ?.filter { it.isNotEmpty() }
-                            ?.toList()
                             ?: throw IllegalStateException("ALLOWED_EMAILS environment variable is required")
 
                         call.application.log.info("Allowed emails: $allowedEmails")
 
                         // Validate email
-                        if (!allowedEmails.contains(userInfo.email)) {
+                        if (!allowedEmails.contains(userInfo.email.lowercase())) {
                             call.application.log.warn("Unauthorized access attempt from email: ${userInfo.email}")
                             call.respondRedirect("/?error=unauthorized")
                             return@get
