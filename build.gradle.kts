@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.21"
 }
 
-group = "com.example"
+group = "com.voizeforms"
 version = "0.0.1"
 
 application {

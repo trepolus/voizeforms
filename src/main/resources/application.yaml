@@ -6,5 +6,5 @@ ktor:
     host: 0.0.0.0
 
 mongodb:
-  connectionString: "$MONGODB_CONNECTION_STRING:mongodb://mongo:27017/voizeforms"
+  connectionString: ${MONGODB_CONNECTION_STRING:-mongodb://mongo:27017/voizeforms}
   database: voizeforms
